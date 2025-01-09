@@ -31,7 +31,6 @@ async function run() {
     // all food related apis
     const foodCollection = client.db('restaurant').collection('foods');
     const foodPurchase = client.db('restaurant').collection('Purchase');
-    const userFoodPurchase = client.db('restaurant').collection('userPurchase');
 
     // post data
     app.post('/food', async (req, res) => {
@@ -39,18 +38,23 @@ async function run() {
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
     })
+
     // get all data
     app.get('/foods', async (req, res) => {
       const cursor = foodCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // Get food details by ID
     app.get('/foods/details/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await foodCollection.findOne(query);
       res.send(result);
     })
+
+    // Get food details by ID
     app.get('/foods/details/purchase/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -58,13 +62,14 @@ async function run() {
       res.send(result);
     })
 
-    // when user click purchase button then store purchase details and also update quantity in db
+    // Handle food purchase
     app.post("/foods/purchase", async (req, res) => {
       const newFood = req.body;
       const result = await foodPurchase.insertOne(newFood);
       res.send(result);
     });
 
+    // Get total purchased quantity of a specific food
     app.get('/foods/purchase/:foodId', async (req, res) => {
       const foodId = req.params.foodId;
 
@@ -81,7 +86,7 @@ async function run() {
 
     });
 
-    // when user click purchase button then update quantity
+    // Update food quantity
     app.patch("/food/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -91,9 +96,7 @@ async function run() {
       res.send(result);
     });
 
-
-    // user system
-    // Get equipment data by logged-in user's email
+    // Get logged-in user's foods
     app.get('/my-foods/:email', async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
@@ -101,6 +104,7 @@ async function run() {
       res.send(result)
     });
 
+    // Update user's food
     app.get('/my-foods/update/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -131,14 +135,7 @@ async function run() {
       res.send(result);
     });
 
-    //for user purchase
-    app.post('/food/Purchase/user', async (req, res) => {
-      const newFood = req.body;
-      const result = await userFoodPurchase.insertOne(newFood);
-      res.send(result);
-    })
-
-    // Get orders data by logged-in user's email
+    // Get logged-in user's orders
     app.get('/my-orders/:email', async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
@@ -146,7 +143,7 @@ async function run() {
       res.send(result)
     });
 
-    //logged user delete her item from mongodb 
+    // Delete user's order
     app.delete('/my-orders/delete/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -154,6 +151,7 @@ async function run() {
       res.send(result);
     })
 
+    // Get top-selling foods
     app.get('/home-foods', async (req, res) => {
       try {
         const result = await foodPurchase.aggregate([
@@ -163,7 +161,7 @@ async function run() {
               _id: "$foodId", // Group by foodId
               foodName: { $first: "$foodName" }, // Get the food name
               price: { $first: "$price" },
-              totalQuantity: { $sum: "$quantity" }, 
+              totalQuantity: { $sum: "$quantity" },
               image: { $first: "$image" }, // Get the image
               foodOrigin: { $first: "$foodOrigin" },
             }
@@ -180,7 +178,7 @@ async function run() {
         res.status(500).send({ error: "Failed to fetch data" });
       }
     });
- 
+
 
   } finally {
     // Ensures that the client will close when you finish/error
@@ -197,6 +195,5 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`food is waiting at: ${port}`)
 })
-
 
 
