@@ -16,6 +16,23 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  // console.log('token inside the verifyToken', token)
+  if (!token) {
+    return res.status(401).send({ message: 'unauthorized access' });
+  }
+  // verify the token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' })
+    }
+    req.user = decoded
+    next();
+  })
+
+}
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jx9i0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -121,9 +138,13 @@ async function run() {
     });
 
     // Get logged-in user's foods
-    app.get('/my-foods/:email', async (req, res) => {
+    app.get('/my-foods/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
+      // token email !== query mail
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const result = await foodCollection.find(filter).toArray();
       res.send(result)
     });
@@ -163,6 +184,10 @@ async function run() {
     app.get('/my-orders/:email', async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
+      // token email !== query mail
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const result = await foodPurchase.find(filter).toArray();
       res.send(result)
     });
