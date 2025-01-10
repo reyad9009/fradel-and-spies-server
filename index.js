@@ -8,10 +8,9 @@ require('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+// Middleware
 app.use(cors({
-  origin: ['http://localhost:5173',
-    'https://assignment-11-b5583.web.app/'
-  ],
+  origin: ['http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
@@ -25,9 +24,9 @@ const client = new MongoClient(uri);
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
+    await client.db("admin").command({ ping: 1 });
     //console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
@@ -39,16 +38,21 @@ async function run() {
     app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.JWT_SECRET, {
-        expiresIn: '10h'
+        expiresIn: '5h'
       });
 
-      res
-        .cookie('token', token, {
-          httpOnly: true,
-          secure: true,
-        })
-        .send({ success: true })
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: false
+      }).send({ success: true })
     });
+
+    app.post('/logout', (req, res) => {
+      res.clearCookie('token', {
+        httpOnly: true,
+        secure: false
+      }).send({ success: true })
+    })
 
 
 
